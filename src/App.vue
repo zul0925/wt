@@ -2,16 +2,17 @@
  * @Author: zul zul0925@qq.com
  * @Date: 2022-12-05 14:32:56
  * @LastEditors: zul zul0925@qq.com
- * @LastEditTime: 2022-12-12 20:22:45
+ * @LastEditTime: 2022-12-17 18:19:40
  * @FilePath: \wt\src\App.vue
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
 <template>
   <div id="app">
     <div class="bg"></div>
+    <audio ref="audioMusic" loop src="./assets/audio/music.mp4"></audio>
     <transition name="fade">
       <div v-if="animationList[0]" class="main">
-        <div class="target-days">XXXX：</div>
+        <div class="target-days">{{animationEnd?"我们的故事还在继续~":""}}</div>
         <div class="count-down">
           <div class="count-down-block">
             {{days}}
@@ -54,14 +55,19 @@
             <span>SECONDS</span>
           </div>
         </div>
+        <div v-if="animationEnd" @click="startAnimation(true)" class="replay">
+          <img src="./assets/peach.png" alt=""/>
+        </div>
       </div>
     </transition>
     <!-- 手机 -->
     <transition name="fade">
       <div v-if="animationList[1]" class="phone">
         <div class="phone-screen">
+          
+    
           <div class="phone-header">
-            <div class="header-time">16:29</div>
+            <div class="header-time">21:24</div>
             <div class="header-black"></div>
             <div class="header-right">
               <i class="iconfont signal">&#xe956;</i>
@@ -69,50 +75,55 @@
               <i class="iconfont battery">&#xe638;</i>
             </div>
           </div>
-          <div class="wechat">
-            <div class="wechat-top">
-              <div class="wechat-back">
-                <i class="iconfont">&#xe710;</i>
+          <transition name="fade">
+            <div v-if="showWechat" class="wechat">
+              <div class="wechat-top">
+                <div class="wechat-back">
+                  <i class="iconfont">&#xe710;</i>
+                </div>
+                <div class="wechat-name">储文婷</div>
+                <div class="wechat-more">
+                  <i class="iconfont">&#xe61f;</i>
+                </div>
               </div>
-              <div class="wechat-name"></div>
-              <div class="wechat-more">
-                <i class="iconfont">&#xe61f;</i>
+              <div class="wechat-content">
+                <div v-for="(item,index) in msgList" :key="item+index">
+                  <transition :name="item.animation">
+                    <div
+                      v-if="item.type === 'sys' && animationList[item.animationIndex]"
+                      class="msg-sys"
+                    >{{item.content}}</div>
+                    <div v-if="item.type === 'right' && animationList[item.animationIndex]" class="msg-r">
+                      <div class="msg-r-content">{{item.content}}</div>
+                      <div class="msg-r-avatar"></div>
+                    </div>
+                    <div v-if="item.type === 'left' && animationList[item.animationIndex]" class="msg-l">
+                      <div class="msg-l-avatar"></div>
+                      <div class="msg-l-content">{{item.content}}</div>
+                    </div>
+                    <!-- 旁白 -->
+                    <div class="wechat-mask" v-if="item.type === 'white' && animationList[item.animationIndex]">{{item.content}}</div>
+                  </transition>
+                </div>
+              </div>
+              <div class="wechat-bottom">
+                <div class="wechat-voice">
+                  <i class="iconfont">&#xe888;</i>
+                </div>
+                <div class="wechat-input"></div>
+                <div class="wechat-emoji">
+                  <i class="iconfont">&#xe60b;</i>
+                </div>
+                <div class="wechat-add">
+                  <i class="iconfont">&#xe726;</i>
+                </div>
+                <div class="wechat-safe-line"></div>
               </div>
             </div>
-            <div class="wechat-content">
-              <div v-for="(item,index) in msgList" :key="item+index">
-                <transition :name="item.animation">
-                  <div
-                    v-if="item.type === 'sys' && animationList[item.animationIndex]"
-                    class="msg-sys"
-                  >{{item.content}}</div>
-                  <div v-if="item.type === 'right' && animationList[item.animationIndex]" class="msg-r">
-                    <div class="msg-r-content">{{item.content}}</div>
-                    <div class="msg-r-avatar"></div>
-                  </div>
-                  <div v-if="item.type === 'left' && animationList[item.animationIndex]" class="msg-l">
-                    <div class="msg-l-avatar"></div>
-                    <div class="msg-l-content">{{item.content}}</div>
-                  </div>
-                  <!-- 旁白 -->
-                  <div class="wechat-mask" v-if="item.type === 'white' && animationList[item.animationIndex]">{{item.content}}</div>
-                </transition>
-              </div>
-            </div>
-            <div class="wechat-bottom">
-              <div class="wechat-voice">
-                <i class="iconfont">&#xe888;</i>
-              </div>
-              <div class="wechat-input"></div>
-              <div class="wechat-emoji">
-                <i class="iconfont">&#xe60b;</i>
-              </div>
-              <div class="wechat-add">
-                <i class="iconfont">&#xe726;</i>
-              </div>
-              <div class="wechat-safe-line"></div>
-            </div>
-          </div>
+          </transition>
+          <transition name="fade">
+            <div v-if="showImg" class="wechat-img"></div>
+          </transition>
         </div>
       </div>
     </transition>
@@ -123,6 +134,7 @@ export default {
   data() {
     return {
       interval: null,
+      intervalContinue:null,
       days: 0,
       hours: 0,
       minutes: 0,
@@ -281,56 +293,303 @@ export default {
           animationIndex: 16,
           msgIndex:18,
         },
-      ]
+        {
+          avatar: "",
+          type: "right",
+          animation: "fadeRight",
+          content: "今天感觉咋样 玩的还开心不",
+          animationIndex: 17,
+          msgIndex:19,
+        },
+        {
+          avatar: "",
+          type: "left",
+          animation: "fadeLeft",
+          content: "开心啊",
+          animationIndex: 18,
+          msgIndex:20,
+        },
+        {
+          avatar: "",
+          type: "left",
+          animation: "fadeLeft",
+          content: "散掉一周的所有不开心",
+          animationIndex: 19,
+          msgIndex:21,
+        },
+        {
+          avatar: "",
+          type: "right",
+          animation: "fadeRight",
+          content: "我感觉兜风挺有意思的",
+          animationIndex: 20,
+          msgIndex:22,
+        },
+        {
+          avatar: "",
+          type: "left",
+          animation: "fadeLeft",
+          content: "就很放松呀 而且今天脱口秀也有意外的收获！是完美的周六了~",
+          animationIndex: 21,
+          msgIndex:23,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "我感觉你应该不讨厌我",
+          animationIndex: 22,
+          msgIndex:24,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "我还想再见你",
+          animationIndex: 23,
+          msgIndex:25,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "于是第二天",
+          animationIndex: 24,
+          msgIndex:26,
+        },
+        {
+          avatar: "",
+          type: "sys",
+          animation: "fade",
+          content: "9月4日 12:13",
+          animationIndex: 25,
+          msgIndex:27,
+        },
+        {
+          avatar: "",
+          type: "left",
+          animation: "fadeLeft",
+          content: "唔 先吃个午饭 下午把车送去洗一下 然后也没啥事了",
+          animationIndex: 25,
+          msgIndex:28,
+        },
+        {
+          avatar: "",
+          type: "right",
+          animation: "fadeRight",
+          content: "那要不要再出来逛逛",
+          animationIndex: 26,
+          msgIndex:29,
+        },
+        {
+          avatar: "",
+          type: "left",
+          animation: "fadeLeft",
+          content: "可以啊 不过要迟一点点呐",
+          animationIndex: 27,
+          msgIndex:30,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "我觉得我应该是恋爱了",
+          animationIndex: 28,
+          msgIndex:31,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "我开始“处心积虑”",
+          animationIndex: 29,
+          msgIndex:32,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "订餐厅，订花，安排行程，布置场景，用上了所有我能想到的，在心里预演告白的场景，等待那一天的到来",
+          animationIndex: 30,
+          msgIndex:33,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "2022.9.11，中秋节的第二天，也是月亮最圆的日子",
+          animationIndex: 31,
+          msgIndex:34,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "背对着满月，面对着你，捧着花的手微微颤抖，诉说着我的心意",
+          animationIndex: 32,
+          msgIndex:35,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "幸运的是，你回应了我的感情，用幸福和喜悦驱散了我的不安",
+          animationIndex: 33,
+          msgIndex:36,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "就这样，我们在一起了",
+          animationIndex: 34,
+          msgIndex:37,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "之后便是一些幸福的日常",
+          animationIndex: 35,
+          msgIndex:38,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "我带你去了外婆家，就像歌里唱的那样",
+          animationIndex: 36,
+          msgIndex:39,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "我们一起看日出日落，看花海",
+          animationIndex: 37,
+          msgIndex:40,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "我们一起去了杭州、漫步西湖、漫步南浔古镇",
+          animationIndex: 38,
+          msgIndex:41,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "重要的不是风景，是陪你看风景的人",
+          animationIndex: 39,
+          msgIndex:42,
+        },
+        {
+          avatar: "",
+          type: "white",
+          animation: "fadeUp",
+          content: "未来还长，我们的故事还在继续",
+          animationIndex: 40,
+          msgIndex:43,
+        },
+      ],
+      showImg: false,
+      showWechat:true,
+      animationEnd:false,
+      played:false
     };
   },
   methods: {
+    play(){
+      if(this.played) return
+      this.played = true
+      this.$refs.audioMusic.load()
+      this.$refs.audioMusic.play()
+    },
     /**
      * @description: 动画流程
      * @return {*}
      */    
-    async animation() {
-      // this.animationList = [false,true,false,false,false]
-      await this.animationHandler(0, 1,false);
-      await this.animationHandler(1, 1);
-      await this.animationHandler(2, 1);
-      await this.animationHandler(3, 1);
-      await this.animationHandler(4, 1);
-      await this.animationHandler([ 2, 3, 4], 1, false);
-      await this.animationHandler(5,1)
-      await this.animationHandler(5,1,false)
-      await this.animationHandler(6,1)
-      await this.animationHandler(6,1,false)
-      await this.animationHandler(7,1)
-      await this.animationHandler(7,1,false)
-      await this.animationHandler(8,1)
-      await this.animationHandler(9,1)
-      await this.animationHandler(10,1)
-      await this.animationHandler(11,1)
-      await this.animationHandler([ 8, 9, 10,11], 1, false);
-      await this.animationHandler(12,1)
-      await this.animationHandler(12,1,false)
-      await this.animationHandler(13,1)
-      await this.animationHandler(13,1,false)
-      await this.animationHandler(14,1)
-      await this.animationHandler(14,1,false)
-      await this.animationHandler(15,1)
-      await this.animationHandler(15,1,false)
-      await this.animationHandler(16,1)
-      await this.animationHandler(16,1,false)
-      await this.animationHandler(17,1)
-      await this.animationHandler(17,1,false)
-      
+    async startAnimation() {
 
 
-
-
-
-
-      // await this.animationHandler(1,1,false)
-      // await this.animationHandler(0, 1,true);
-      
-
+      await this.animationHandler(0, 2,false);
+      await this.animationHandler(1, 2); //手机
+      await this.animationHandler(2, 2);
+      await this.animationHandler(3, 2);
+      await this.animationHandler(4, 2);
+      await this.animationHandler([ 2, 3, 4], 2, false);
+      await this.animationHandler(5,2)
+      await this.animationHandler(5,2,false)
+      await this.animationHandler(6,2)
+      await this.animationHandler(6,2,false)
+      await this.animationHandler(7,2)
+      await this.animationHandler(7,2,false)
+      await this.animationHandler(8,2)
+      await this.animationHandler(9,2)
+      await this.animationHandler(10,2)
+      await this.animationHandler(11,2)
+      await this.animationHandler([ 8, 9, 10,11], 2, false);
+      await this.animationHandler(12,2)
+      await this.animationHandler(12,2,false)
+      await this.animationHandler(13,2)
+      await this.animationHandler(13,2,false)
+      await this.animationHandler(14,2)
+      await this.animationHandler(14,2,false)
+      await this.animationHandler(15,2)
+      await this.animationHandler(15,2,false)
+      await this.animationHandler(16,2)
+      await this.animationHandler(16,2,false)
+      await this.animationHandler(17,2)
+      await this.animationHandler(18,2)
+      await this.animationHandler(19,2)
+      await this.animationHandler(20,2)
+      await this.animationHandler(21,2)
+      await this.animationHandler([17,18,19,20,21],2,false)
+      await this.animationHandler(22,2)
+      await this.animationHandler(22,2,false)
+      await this.animationHandler(23,2)
+      await this.animationHandler(23,2,false)
+      await this.animationHandler(24,2)
+      await this.animationHandler(24,2,false)
+      await this.animationHandler(25,2)
+      await this.animationHandler(26,2)
+      await this.animationHandler(27,2)
+      await this.animationHandler([25,26,27],2,false)
+      await this.animationHandler(28,2)
+      await this.animationHandler(28,2,false)
+      await this.animationHandler(29,2)
+      await this.animationHandler(29,2,false)
+      await this.animationHandler(30,2)
+      await this.animationHandler(30,5,false)
+      await this.animationHandler(31,2)
+      await this.animationHandler(31,5,false)
+      await this.animationHandler(32,2)
+      await this.animationHandler(32,5,false)
+      await this.animationHandler(33,2)
+      await this.animationHandler(33,4,false)
+      await this.animationHandler(34,2)
+      await this.animationHandler(34,3,false)
+      await this.animationHandler(35,2)
+      await this.animationHandler(35,3,false)
+      await this.animationHandler(36,2)
+      await this.animationHandler(36,3,false)
+      await this.animationHandler(37,2)
+      await this.animationHandler(37,3,false)
+      await this.animationHandler(38,2)
+      await this.animationHandler(38,3,false)
+      await this.animationHandler(39,2)
+      await this.animationHandler(39,3,false)
+      await this.animationHandler(40,2)
+      await this.animationHandler(40,5,false)
+      await this.animationHandler(1,1,false)
+      await this.animationHandler(0, 1,true);
+      clearInterval(this.interval);
+      this.animationEnd = true
+      this.intervalContinue = setInterval(() => {
+        this.initContinue()
+      }, 1000);
 
 
     },
@@ -342,20 +601,46 @@ export default {
      * @return {*}
      */
 
-    animationHandler(animationIndex = [], sec = 1, flag = true) {
+    animationHandler(animationIndex = [], sec = 2, flag = true) {
       return new Promise(resolve => {
         setTimeout(() => {
           if (Array.isArray(animationIndex)) {
             animationIndex.forEach(item => {
-              this.animationList.splice(item, 1, flag);
+              let count = item - this.animationList.length + 1
+              if(count > 0){
+                let countArray = new Array(count).fill(false)
+                this.animationList = this.animationList.concat(countArray)
+                this.animationList.splice(item, 1, flag);
+              }else{
+                this.animationList.splice(item, 1, flag);
+              }
             });
           } else {
-            this.animationList.splice(animationIndex, 1, flag);
+            let count = animationIndex - this.animationList.length + 1
+            if(count > 0){
+              let countArray = new Array(count).fill(false)
+              this.animationList = this.animationList.concat(countArray)
+              this.animationList.splice(animationIndex, 1, flag);
+            }else{
+              this.animationList.splice(animationIndex, 1, flag);
+            }
           }
           resolve();
         }, sec * 1000);
       });
     },
+    /**
+     * @description: 延迟
+     * @param {Number} sec - 延迟的秒数（秒）
+     * @return {*}
+     */
+    sleep(sec){
+      return new Promise(resolve=>{
+        setTimeout(() => {
+          resolve()
+        }, sec*1000);
+      })
+    },  
     /**
      * @description:开始倒计时
      * @return {*}
@@ -363,9 +648,9 @@ export default {
 
     initCountDown() {
       // let date = new Date("2022-12-19 00:00:00")
-      let dateStart = new Date("2022-09-11 21:00:00").getTime();
+      let dateStart = new Date("2022-09-11 21:24:00").getTime();
       let dateTarget = new Date(
-        -(-dateStart) + 100 * 24 * 60 * 60 * 1000
+        -(-dateStart) + 99 * 24 * 60 * 60 * 1000
       ).getTime();
       let dateNow = new Date().getTime();
       this.days = Math.floor((dateTarget - dateNow) / 86400000);
@@ -376,6 +661,22 @@ export default {
       this.seconds = Math.floor(
         ((((dateTarget - dateNow) % 86400000) % 3600000) % 60000) / 1000
       );
+      if(this.days == 0 && this.hours ==0 && this.minutes ==0 && this.seconds ==0){
+        clearInterval(this.interval)
+        this.startAnimation();
+      }
+    },
+    initContinue(){
+      let dateStart = new Date("2022-09-11 21:24:00").getTime();
+      let dateNow = new Date().getTime();
+      this.days = Math.floor((dateNow - dateStart) / 86400000);
+      this.hours = Math.floor(((dateNow - dateStart) % 86400000) / 3600000);
+      this.minutes = Math.floor(
+        (((dateNow - dateStart) % 86400000) % 3600000) / 60000
+      );
+      this.seconds = Math.floor(
+        ((((dateNow - dateStart) % 86400000) % 3600000) % 60000) / 1000
+      );
     }
   },
   async created() {
@@ -383,17 +684,25 @@ export default {
     this.interval = setInterval(() => {
       this.initCountDown();
     }, 1000);
-    this.animation();
   },
+  mounted(){
+    this.startAnimation();
+    document.addEventListener("click",this.play)
+  },  
   beforeDestroy() {
     clearInterval(this.interval);
+    clearInterval(this.initContinue)
+    document.removeEventListener("click",this.play)
   }
 };
 </script>
 <style lang="scss">
+@keyframes fadenum{
+   100%{transform:rotate(360deg);}
+}
 #app {
-  // background-image: url("./assets/texture.png");
-  // background-color: rgb(246, 206, 193);
+  background-image: url("./assets/texture.png");
+  background-color: rgb(246, 206, 193);
   width: 100%;
   height: 100vh;
   display: flex;
@@ -418,11 +727,13 @@ export default {
       border-radius: 40px;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
       .wechat {
         flex: auto;
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        background-color: rgb(245, 245, 245);
         .wechat-mask{
           margin: 60% auto 0;
           text-align: center;
@@ -548,6 +859,13 @@ export default {
           }
         }
       }
+      .wechat-img{
+        flex: auto;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background-color: rgba(20, 20, 20,.6);
+      }
       .phone-header {
         display: flex;
         align-items: baseline;
@@ -593,6 +911,20 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: center;
+    .replay{
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50px;
+      background: rgba($color: #000000, $alpha: .5);
+      animation: fadenum 2s infinite linear;
+      cursor: pointer;
+      img{
+        width: 60px;
+      }
+    }
     .count-down {
       display: flex;
       font-size: 44px;
@@ -627,13 +959,16 @@ export default {
       }
     }
     .target-days {
-      font-size: 40px;
-      color: white;
+      font-size: 30px;
+      color: rgb(235, 80, 126);
       text-align: center;
+      width: 100%;
+      height: 52px;
+      margin-bottom: 20px;
     }
   }
   .bg {
-    // background-image: url("./assets/peach-bg.png");
+    background-image: url("./assets/peach-bg.png");
     background-size: contain;
     width: 100%;
     opacity: 0.2;
