@@ -2,7 +2,7 @@
  * @Author: zul zul0925@qq.com
  * @Date: 2022-12-05 14:32:56
  * @LastEditors: zul zul0925@qq.com
- * @LastEditTime: 2022-12-19 08:20:22
+ * @LastEditTime: 2022-12-19 08:25:52
  * @FilePath: \wt\src\App.vue
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -55,7 +55,7 @@
             <span>SECONDS</span>
           </div>
         </div>
-        <div @click="startAnimation(true)" class="replay">
+        <div v-if="timesup" @click="startAnimation(true)" class="replay">
           <img src="./assets/peach.png" alt=""/>
         </div>
       </div>
