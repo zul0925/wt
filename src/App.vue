@@ -2,7 +2,7 @@
  * @Author: zul zul0925@qq.com
  * @Date: 2022-12-05 14:32:56
  * @LastEditors: zul zul0925@qq.com
- * @LastEditTime: 2022-12-17 18:19:40
+ * @LastEditTime: 2022-12-19 08:20:22
  * @FilePath: \wt\src\App.vue
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -55,7 +55,7 @@
             <span>SECONDS</span>
           </div>
         </div>
-        <div v-if="animationEnd" @click="startAnimation(true)" class="replay">
+        <div @click="startAnimation(true)" class="replay">
           <img src="./assets/peach.png" alt=""/>
         </div>
       </div>
@@ -497,7 +497,8 @@ export default {
       showImg: false,
       showWechat:true,
       animationEnd:false,
-      played:false
+      played:false,
+      timesup:false
     };
   },
   methods: {
@@ -512,8 +513,8 @@ export default {
      * @return {*}
      */    
     async startAnimation() {
-
-
+      if(!this.timesup) return
+      this.play()
       await this.animationHandler(0, 2,false);
       await this.animationHandler(1, 2); //手机
       await this.animationHandler(2, 2);
@@ -653,6 +654,10 @@ export default {
         -(-dateStart) + 99 * 24 * 60 * 60 * 1000
       ).getTime();
       let dateNow = new Date().getTime();
+      if((dateTarget - dateNow)< 0){
+        this.timesup = true
+        return
+      }
       this.days = Math.floor((dateTarget - dateNow) / 86400000);
       this.hours = Math.floor(((dateTarget - dateNow) % 86400000) / 3600000);
       this.minutes = Math.floor(
@@ -685,14 +690,9 @@ export default {
       this.initCountDown();
     }, 1000);
   },
-  mounted(){
-    this.startAnimation();
-    document.addEventListener("click",this.play)
-  },  
   beforeDestroy() {
     clearInterval(this.interval);
     clearInterval(this.initContinue)
-    document.removeEventListener("click",this.play)
   }
 };
 </script>
@@ -904,7 +904,7 @@ export default {
   }
   .main {
     position: relative;
-    padding-top: 20%;
+    padding-top: 15%;
     z-index: 1;
     width: 100%;
     height: 100%;
@@ -918,8 +918,8 @@ export default {
       align-items: center;
       justify-content: center;
       border-radius: 50px;
-      background: rgba($color: #000000, $alpha: .5);
-      animation: fadenum 2s infinite linear;
+      background: rgba($color: #000000, $alpha: .3);
+      animation: fadenum 3s infinite linear;
       cursor: pointer;
       img{
         width: 60px;
